@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warszawskie Tramwaje na Żywo</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { font-family: sans-serif; margin: 0; padding: 0; }
+        header { background: #d70020; color: white; padding: 15px; text-align: center; }
+        #map { height: calc(100vh - 60px); width: 100%; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h2>Warszawskie Tramwaje na Żywo</h2>
+    </header>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Inicjalizacja mapy, wyśrodkowanej na Warszawę
+        const map = L.map('map').setView([52.2297, 21.0122], 12);
+
+        // Dodanie podkładu mapy z OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Nowa funkcja pobierająca przystanki
+        async function fetchStops() {
+            try {
+                const response = await fetch('/api/stops');
+                const stops = await response.json();
+
+                // Ograniczamy do 1000 pierwszych przystanków dla płynności działania przeglądarki
+                const stopsToDisplay = stops.slice(0, 1000);
+
+                stopsToDisplay.forEach(stop => {
+                    // W tym węźle API klucze nazywają się inaczej
+                    const lat = parseFloat(stop.szer_geo);
+                    const lon = parseFloat(stop.dlug_geo);
+                    const name = stop.nazwa_zespolu;
+                    const pole = stop.slupek;
+                    console.log(`Dodaję przystanek: ${name} (Słupek nr: ${pole}) na współrzędnych: ${lat}, ${lon}`);
+
+                    L.marker([lat, lon]).addTo(map)
+                        .bindPopup(`<b>Przystanek: ${name}</b><br>Słupek nr: ${pole}`);
+                });
+            } catch (error) {
+                console.error("Błąd podczas pobierania danych:", error);
+            }
+        }
+
+        fetchStops();
+    </script>
+</body>
+</html>
